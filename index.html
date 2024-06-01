@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en-us" data-lang-code="en-us" data-user-country="us">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+    <link rel="preload" as="style" href="https://demo.synology.com/build/assets/dsygno-v3.2.1-63f9aa86.css" /><link rel="preload" as="style" href="https://demo.synology.com/build/assets/dsygno-v2.15.0-a7f6ed4d.css" /><link rel="preload" as="style" href="https://demo.synology.com/build/assets/syno-a65a987b.css" /><link rel="stylesheet" href="https://demo.synology.com/build/assets/dsygno-v3.2.1-63f9aa86.css" /><link rel="stylesheet" href="https://demo.synology.com/build/assets/dsygno-v2.15.0-a7f6ed4d.css" /><link rel="stylesheet" href="https://demo.synology.com/build/assets/syno-a65a987b.css" />
+
+	<link rel="preload" as="style" href="https://demo.synology.com/build/assets/demo-004469bb.css" /><link rel="stylesheet" href="https://demo.synology.com/build/assets/demo-004469bb.css" />
+
+    <link rel="stylesheet" href="assets/css/styles1.css" />
+    <link rel="stylesheet" href="assets/css/styles2.css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.12/vue.min.js"></script>
+</head>
+<body id="root" class="clearfix en-us">
+    <div id="demo" class="s-article s-section no-min-height demo">
+        <div class="vue ready">
+            <live-demo>
+                <template v-slot:banner>
+                    <div class="demo__banner-btn-group">
+                        <live-demo-btn
+                            key="dsm70"
+                            sds="https://dsmdemo.synologydemo.com/sds.js"
+                            target_path=""
+                            name="Launch DiskStationManager Virtual Machine"
+                            progress-title="DSM Online Demo"
+                            progress-desc=""
+                            :btn-active="current_btn === 'dsm70'"
+                            :hash="'#dsm70'"
+                            :class="['s-btn s-btn--l demo__banner-btn', { disabled: req_btn && req_btn != 'dsm70'}]"
+                            @mouseenter.native="current_btn = 'dsm70'"
+                            @request="req_btn = 'dsm70'"
+                            @done="req_btn = ''"
+                        >
+                            Launch DiskStationManager Virtual Machine
+                        </live-demo-btn>
+                    </div>
+                </template>
+
+                <template v-slot:progress-info>
+                    <article class="s-article s-section__intro">
+                        <h2 class="demo__progress-title" ref="progressTitle"></h2>
+                        <p class="demo__progress-desc" ref="progressDesc"></p>
+                    </article>
+                </template>
+            </live-demo>
+        </div>
+    </div>
+    <div class="includes hide">
+		<template id="live-demo_template">
+            <div>
+                <slot name="banner"></slot>
+                <slot name="solutions"></slot>
+                <section 
+                    id="demo-progress"
+                    class="demo__progress"
+                    v-show="current_state.bar"
+                >
+                    <div class="s-container-narrow">
+                        <slot name="progress-info"></slot>
+
+                        <div :class="['demo__progress-bar', 'bar-'+current_state.bar]">
+                            <div class="demo__progress-load" :style="bar_style"></div>
+                        </div>
+
+                        <div class="demo__progress-text">
+                            <span class="demo__progress-val" v-text="progress + '%'"></span>
+                            <span class="demo__progress-state" v-text="current_state.text"></span>
+                            
+                            <p 
+                                v-if="current_state.bar == 'queue'"
+                                class="demo__progress-message" 
+                            >
+                                Please wait for <span class="min" v-text="display_min"></span> minutes.
+                            </p>
+
+                            <p 
+                                v-if="state == 'error'"
+                                class="demo__progress-message" 
+                            >
+                                An unexpected error occurred. Please try again later.
+                            </p>
+                        </div>
+
+                        <!-- <button 
+                            :class="['s-btn s-btn--l demo__progress-btn', current_state.cls]" 
+                            name="Continue"
+                            @click="demoOpenWindow"
+                        >
+                            <span>Continue</span>
+                        </button> -->
+
+                        <div v-show="demoUrl">
+                            <p>Server: <a :href="demoUrl" v-text="demoUrl"></a></p>
+                            <p>Username: <span v-text="username"></span></p>
+                            <p>Password: <span v-text="password"></span></p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <script>
+            Vue.component("live-demo", {
+                template: "#live-demo_template",
+                data: function() {
+                    return {"state":"initial","progress":0,"demoUrl":"","username":"","password":"","states":{"maintain":{"cls":"btn-maintain disabled","text":"Under maintenance"},"initial":{"cls":"btn-prepare"},"request":{"cls":"btn-request disabled","text":"Waiting","mask":true,"bar":"none"},"queue":{"cls":"btn-queue disabled","text":"Waiting","mask":true,"bar":"queue"},"queue_redirect":{"cls":"btn-prepare","text":"Try again later","mask":true,"bar":"queue"},"queue_complete":{"cls":"btn-queue disabled","text":"Waiting","mask":true,"bar":"queue"},"loading":{"cls":"btn-loading disabled","text":"Loading","mask":true,"bar":"loading"},"loggin_in":{"cls":"btn-loading disabled","text":"Logging in","mask":true,"bar":"loading"},"ready":{"cls":"btn-launch","text":"Launch","mask":true,"bar":"loading"},"error":{"cls":"btn-prepare","text":"Try again"}}}
+                },
+                computed: {
+                    current_state: function() {
+                        return (this.states[this.state] || {});
+                    },
+                    display_min: function() {
+                        return Math.ceil(this.progress * QUEUE_THRESHOLD / 100);
+                    },
+                    bar_style: function() {
+                        return {
+                            width: this.progress + "%"
+                        }
+                    },
+                },
+                methods: {
+                    updateProgress: function(val) {
+                        this.progress = val;
+                    },
+                    updateDemoUrl: function(url) {
+                        this.demoUrl = url;
+                    },
+                    demoOpenWindow: function() {
+                        var vm = this;
+                        let windowWidth = window.screen.width*0.8;
+                        let windowHeight = window.screen.height*0.8;
+                        let positionLeft = window.screen.width*0.1;
+                        let positionTop = window.screen.height*0.1;
+
+                        console.log("url", vm.demoUrl);
+
+                        window.open(vm.demoUrl, "Synology Online Demos", `status=yes, width=${windowWidth}, height=${windowHeight}, resizable=yes, left="${positionLeft}", top="${positionTop}", screenX="${positionLeft}", screenY="${positionTop}", toolbar=no, menubar=no, scrollbars=yes, location=yes, directories=no"`);
+
+                        if (window.dataLayer) dataLayer.push({ event: "demo_request" });
+
+                        // reset
+                        vm.state = "initial";
+                        vm.target_url = "";
+                    },
+                },
+            });
+        </script>
+		<template id="live-demo-btn_template">
+            <button
+                :class="buttonClass"
+                @click="launch"
+            >
+                <span>
+                    <slot></slot>
+                </span>
+            </button>
+        </template>
+
+        <script>
+            Vue.component("live-demo-btn", {
+                    template: "#live-demo-btn_template",
+                    props: [
+                            'progress-title',
+                            'progress-desc',
+                            'btn-active',
+                            'hash',
+                            'sds',
+                            'target_path',
+                    ],
+                    data: function() {
+                            var data = {"state":"initial","target_url":""};
+                            return data;
+                    },
+                    watch: {
+                            state: function() {
+                                    this.$parent.state = this.state;
+                                    if (this.state == 'request') {
+                                            this.$emit('request');
+                                    } else if (this.state == 'ready' || this.state == 'error') {
+                                            this.$emit('done');
+                                    }
+                            }
+                    },
+                    computed: {
+                            current_state: function() {
+                                    return (this.$parent.states[this.state] || {});
+                            },
+                            buttonClass: function() {
+                                    var btnClass = {};
+                                    btnClass[this.current_state.cls] = true;
+                                    return (btnClass || {});
+                            },
+                            url: function() {
+                                    return this.target_url ? "https://"+this.target_url+":5001" : "";
+                            }
+                    },
+                    methods: {
+                            launch: function() {
+                                    var vm = this;
+                                    const progressTitle = document.querySelector(".demo__progress-title");
+                                    const progressDesc = document.querySelector(".demo__progress-desc");
+                                    
+                                    // 更改 progress info
+                                    progressTitle.innerText = vm.progressTitle;
+                                    if (vm.progressDesc !== undefined || vm.progressDesc !== "") progressDesc.innerText = vm.progressDesc;
+
+                                    if (['initial', 'queue_redirect', 'error'].indexOf(vm.state) != -1) {
+                                            vm.state = "request";
+                                            vm.target_url = "";
+                                            vm.$parent.updateProgress(0);
+
+                                            $.getScript(vm.sds, function() {
+                                                    sds.visitorAdd();
+
+                                                    sds.launch(vm.demoDsmLaunched);
+                                            });
+                                    } else {
+                                            vm.state = "error";
+                                    }
+                            },
+                            demoDsmLaunched: function(resp, status) {
+                                    console.log("demoDsmLaunched", resp, status);
+                                    var vm = this;
+                                    var data = resp.data;
+
+                                    if (!data) {
+                                            vm.state = "error";
+                                    } else if ('queue' === data.status) {
+                                            sds.queue(vm.demoDSMqueued);
+                                    } else if ('new' === data.status || 'exist' === data.status) {
+                                            sds.getDemoDsm(vm.demoDsmGot);
+                                    } else {
+                                            vm.state = "error";
+                                    }
+                            },
+                            demoDSMqueued: function(resp, status) {
+                                    console.log("demoDSMqueued", resp, status);
+                                    var vm = this;
+
+                                    if ('error' === status || !resp.success) {
+                                            vm.state = "error";
+                                            return;
+                                    }
+
+                                    var data = resp.data;
+
+                                    if (data.found) {
+                                            vm.state = "queue_complete";
+                                            sds.getDemoDsm(vm.demoDsmGot);
+
+                                    } else if (!isNaN(data.estimateTime) && data.estimateTime < QUEUE_THRESHOLD * 60) {
+                                            if (data.estimateTime === 0) {
+                                                    vm.state = "queue_complete";
+                                            } else {
+                                                    vm.state = "queue";
+                                                    vm.$parent.updateProgress(100 * data.estimateTime / (QUEUE_THRESHOLD * 60));
+                                            }
+
+                                            setTimeout(function() {
+                                                    sds.queue(vm.demoDSMqueued);
+                                            }, 5000);
+                                    } else {
+                                            vm.state = "queue_redirect";
+                                    }
+
+                            },
+                            demoDsmGot: function(resp, status) {
+                                    console.log("demoDsmGot", resp, status);
+                                    var vm = this;
+
+                                    var data = resp.data
+                                    if ('error' === status || !resp.success || !data) {
+                                            vm.state = "error";
+                                            return;
+                                    }
+
+                                    if (data.shutdown) {
+                                            setTimeout(function() {
+                                                    sds.launch(vm.demoDsmLaunched);
+                                            }, 5000);
+                                    } else if (!!data.found && !!data.ready) {
+                                            vm.target_url = data.url;
+                                            // vm.state = "loggin_in";
+                                            vm.$parent.updateProgress(100);
+
+                                            // setTimeout(function() {
+                                            //         sds.login(vm.target_url, vm.demoDSMLoggedin);
+                                            // }, 2000);
+
+                                            // new start
+                                            vm.state = "ready";
+                                            vm.$parent.updateDemoUrl(vm.url);
+                                            vm.$parent.username = "demouser";
+                                            vm.$parent.password = sds.getUserId();
+                                            // new end
+                                    } else {
+                                            if (!!data.progress && typeof data.progress == "number") {
+                                                    vm.state = "loading";
+                                                    vm.$parent.updateProgress(data.progress);
+                                            }
+                                            vm.defaultHandler();
+                                    }
+                            },
+                            demoDSMLoggedin: function(resp, status) {
+                                    console.log("demoDSMLoggedin", resp, status);
+
+                                    var vm = this;
+
+                                    if ('error' === status) {
+                                            vm.state = "error";
+                                            return;
+                                    }
+                                    if ('string' === typeof(resp)) {
+                                            resp = JSON.parse(resp);
+                                    } else {
+                                            resp = resp;
+                                    }
+                                    if (resp.success) {
+                                            setTimeout(function() {
+                                                    sds.getAuthKey(vm.target_url, resp.data.sid, resp.data.synotoken, vm.demoDSMAuthKeyGot);
+                                            }, 1000);
+                                    } else {
+                                            vm.defaultHandler();
+                                    }
+                            },
+                            demoDSMAuthKeyGot: function(resp) {
+                                    var vm = this;
+                                    let targetPathUrl = vm.target_path;
+
+                                    if ('string' === typeof(resp)) {
+                                            resp = JSON.parse(resp);
+                                    } else {
+                                            resp = resp;
+                                    }
+
+                                    console.log("demoDSMAuthKeyGot", resp);
+
+                                    if (resp.success) {
+                                            vm.state = "ready";
+                                            vm.$parent.updateProgress(100);
+
+                                            // handle target_path param
+                                            targetPathUrl.includes("?") ? targetPathUrl = `${targetPathUrl}&` : targetPathUrl = `${targetPathUrl}?`
+
+                                            vm.$parent.updateDemoUrl(`https://${vm.target_url}:5001${targetPathUrl}auth_key=${resp.data.auth_key}`);
+                                    } else {
+                                            // try login without auth key
+                                            vm.state = "ready";
+                                            vm.$parent.updateProgress(100);
+                                            vm.$parent.updateDemoUrl(`https://${vm.target_url}:5001${targetPathUrl}`);
+                                    }
+                            },
+                            defaultHandler: function() {
+                                    var vm = this;
+                                    setTimeout(function() {
+                                            sds.getDemoDsm(vm.demoDsmGot);
+                                    }, 1000);
+                            },
+                    },
+            });
+        </script>
+    </div>
+
+    <script>
+		const QUEUE_THRESHOLD = 35; //minutes
+
+		$(document).ready(function() {
+			var vm = new Vue({
+				el: "#demo .vue",
+				data: {
+					current_btn: "dsm70",
+					req_btn: "",
+				},
+				created: function () {
+					if (window.location.hash !== '') {
+						if (window.location.hash === '#dsm70') this.current_btn = 'dsm70';
+					}
+				}
+			});
+		});
+	</script>
+</body>
